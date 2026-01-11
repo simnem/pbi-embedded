@@ -348,7 +348,7 @@
        const response = await fetch('https://pbi-embedded-app-dyexf5hwhfe4b4ec.westeurope-01.azurewebsites.net/generateToken', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, country })
+        body: JSON.stringify(currentUser)
       });
 
         if (!response.ok) {
@@ -357,7 +357,7 @@
 
         const data = await response.json();
 
-        if (!data.accessToken) {
+        if (!data.token) {
           throw new Error('No access token returned');
         }
 
@@ -372,7 +372,7 @@
           type: 'report',
           id: data.reportId,
           embedUrl: data.embedUrl,
-          accessToken: data.accessToken,
+          accessToken: data.token,
           tokenType: 1,
           settings: {
             panes: {
@@ -412,6 +412,7 @@
 </body>
 
 </html>
+
 
 
 
