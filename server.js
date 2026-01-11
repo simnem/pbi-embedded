@@ -3,6 +3,8 @@ const axios = require('axios');
 const { ClientSecretCredential } = require('@azure/identity');
 const app = express();
 
+const PORT = process.env.PORT || 8080;
+
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -89,4 +91,5 @@ app.post('/generateToken', async (req, res) => {
 });
 
 app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+
 
