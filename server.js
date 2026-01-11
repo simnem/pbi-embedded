@@ -87,10 +87,13 @@ app.post('/generateToken', async (req, res) => {
 
     res.json({
       token: embedToken,
+      accessToken: embedToken,
       reportId: reportId,
+      embedUrl: `https://app.powerbi.com/reportEmbed?reportId=${reportId}&groupId=${workspaceId}`,
       workspaceId: workspaceId,
       datasetId: process.env.DATASET_ID
     });
+
 
   } catch (error) {
     console.error('Token generation error:', error.response?.data || error.message);
@@ -102,5 +105,6 @@ app.post('/generateToken', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
 
 
