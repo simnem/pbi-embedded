@@ -32,19 +32,68 @@ app.use((req, res, next) => {
 
 
 // Token generation endpoint
+const axios = require('axios');
+
 app.post('/generateToken', async (req, res) => {
   try {
     const { name, country } = req.body;
     console.log('Received:', { name, country });
-    
-    // Your Power BI token logic here
-    // For now, return a test response
-    res.json({ 
-      token: 'test-token-placeholder',
-      success: true 
+
+    // Get credentials from environment
+    const clientId = process.env.CLIENT_ID;
+    const clientSecret = process.env.CLIENT_SECRET;
+    const tenantId = process.env.TENANT_ID;
+    const workspaceId = process.env.WORKSPACE_ID;
+    const reportId = process.env.REPORT_ID;
+
+    // Step 1: Get access token from Azure AD
+    const tokenResponse = await axios.post(
+      `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+      new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: 'https://analysis.windows.net/powerbi/api/.default',
+        grant_type: 'client_credentials'
+      }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    const accessToken = tokenResponse.data.access_token;
+    console.log('Got Azure AD token');
+
+    // Step 2: Generate Power BI embed token
+    const embedResponse = await axios.post(
+      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/GenerateToken`,
+      {
+        accessLevel: 'View',
+        identities: [
+          {
+            username: name,
+            roles: ['Viewer'],
+            datasets: [process.env.DATASET_ID]
+          }
+        ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const embedToken = embedResponse.data.token;
+    console.log('Got embed token for:', name);
+
+    res.json({
+      token: embedToken,
+      reportId: reportId,
+      workspaceId: workspaceId,
+      datasetId: process.env.DATASET_ID
     });
+
   } catch (error) {
-    console.error('Token error:', error);
+    console.error('Token generation error:', error.response?.data || error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -53,4 +102,5 @@ app.post('/generateToken', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
 
