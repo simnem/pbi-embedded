@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Power BI Embedded Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/powerbi-client/2.23.0/powerbi.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .user-info {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .user-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .btn-logout {
+      background: white;
+      color: #667eea;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .content {
+      padding: 30px 40px;
+    }
+    .status {
+      background: #f0f7ff;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #333;
+    }
+    .status.loading {
+      background: #fff8e1;
+      border-left-color: #fbc02d;
+      color: #f57f17;
+    }
+    .status.success {
+      background: #e8f5e9;
+      border-left-color: #4caf50;
+      color: #2e7d32;
+    }
+    .status.error {
+      background: #ffebee;
+      border-left-color: #f44336;
+      color: #c62828;
+    }
+    #reportContainer {
+      width: 100%;
+      height: 600px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+      margin-top: 20px;
+    }
+
+    /* === LOGIN MODAL === */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .modal-content h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .modal-content p {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal active">
+    <div class="modal-content">
+      <h2>👋 Welcome</h2>
+      <p>Please enter your name and select your country</p>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="nameInput">Your Name</label>
+          <input type="text" id="nameInput" placeholder="John Doe" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="countrySelect">Your Country</label>
+          <select id="countrySelect" required>
+            <option value="">-- Select Country --</option>
+            <option value="US">🇺🇸 United States</option>
+            <option value="MX">🇲🇽 Mexico</option>
+            <option value="CA">🇨🇦 Canada</option>
+            <option value="PR">🇵🇷 Puerto Rico</option>
+            <option value="PE">🇵🇪 Peru</option>
+            <option value="TW">🇹🇼 Taiwan</option>
+            <option value="PG">🇵🇬 Papua New Guinea</option>
+            <option value="DO">🇩🇴 Dominican Republic</option>
+            <option value="AR">🇦🇷 Argentina</option>
+            <option value="NZ">🇳🇿 New Zealand</option>
+            <option value="JP">🇯🇵 Japan</option>
+            <option value="VG">🇻🇬 Virgin Islands</option>
+            <option value="CL">🇨🇱 Chile</option>
+            <option value="VU">🇻🇺 Vanuatu</option>
+            <option value="TO">🇹🇴 Tonga</option>
+            <option value="RU">🇷🇺 Russia</option>
+            <option value="SV">🇸🇻 El Salvador</option>
+            <option value="TJ">🇹🇯 Tajikistan</option>
+            <option value="GS">🇬🇸 South Georgia</option>
+            <option value="ID">🇮🇩 Indonesia</option>
+            <option value="AF">🇦🇫 Afghanistan</option>
+            <option value="PH">🇵🇭 Philippines</option>
+            <option value="IN">🇮🇳 India</option>
+            <option value="FJ">🇫🇯 Fiji</option>
+            <option value="CO">🇨🇴 Colombia</option>
+            <option value="GU">🇬🇺 Guam</option>
+            <option value="AZ">🇦🇿 Azerbaijan</option>
+            <option value="BO">🇧🇴 Bolivia</option>
+            <option value="GR">🇬🇷 Greece</option>
+            <option value="NI">🇳🇮 Nicaragua</option>
+            <option value="CN">🇨🇳 China</option>
+            <option value="WF">🇼🇫 Wallis and Futuna</option>
+            <option value="NC">🇳🇨 New Caledonia</option>
+            <option value="MU">🇲🇺 Mauritius</option>
+            <option value="SJ">🇸🇯 Svalbard and Jan Mayen</option>
+            <option value="GL">🇬🇱 Greenland</option>
+            <option value="SD">🇸🇩 Sudan</option>
+            <option value="IR">🇮🇷 Iran</option>
+            </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="submit" class="btn-primary">Enter Dashboard</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="container" id="dashboard" style="display: none;">
+    <div class="header">
+      <h1 id="greeting">📊 Dashboard</h1>
+      <div class="user-info">
+        <div class="user-badge">
+          <span id="userCountryBadge">Country: US</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div id="status" class="status">
+        Loading dashboard...
+      </div>
+      <div id="reportContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = {
+      name: '',
+      country: ''
+    };
+
+    // CHECK IF USER DATA EXISTS IN SESSION (from previous login)
+    function checkExistingSession() {
+      if (sessionStorage.getItem('userName') && sessionStorage.getItem('userCountry')) {
+        currentUser.name = sessionStorage.getItem('userName');
+        currentUser.country = sessionStorage.getItem('userCountry');
+
+        // Hide modal, show dashboard
+        document.getElementById('loginModal').classList.remove('active');
+        document.getElementById('dashboard').style.display = 'block';
+
+        // Update header
+        document.getElementById('greeting').textContent = `👋 Hello, ${currentUser.name}!`;
+        document.getElementById('userCountryBadge').textContent = `📍 ${currentUser.country}`;
+
+        // Load report (after short delay)
+        setTimeout(embedReport, 500);
+        
+        return true;
+      }
+      return false;
+    }
+
+    // LOGIN FORM HANDLER
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('nameInput').value.trim();
+      const country = document.getElementById('countrySelect').value;
+
+      if (!name || !country) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      // Store user info in sessionStorage (survives reload)
+      sessionStorage.setItem('userName', name);
+      sessionStorage.setItem('userCountry', country);
+
+      // Reload page to start fresh with new user
+      window.location.reload();
+    });
+
+    function updateStatus(message, type = 'loading') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status ${type}`;
+    }
+
+    async function embedReport() {
+      try {
+        updateStatus(`Loading your data from ${currentUser.country}...`, 'loading');
+        
+        console.log('Sending user:', currentUser);
+        
+        const container = document.getElementById('reportContainer');
+        
+        // Clear the container
+        container.innerHTML = '';
+        
+        // Wait a bit before fetching token
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        const response = await fetch('/generateToken', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ country: currentUser.country })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.accessToken) {
+          throw new Error('No access token returned');
+        }
+
+        if (typeof powerbi === 'undefined') {
+          throw new Error('Power BI SDK not loaded');
+        }
+
+        // Wait before embedding
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const config = {
+          type: 'report',
+          id: data.reportId,
+          embedUrl: data.embedUrl,
+          accessToken: data.accessToken,
+          tokenType: 1,
+          settings: {
+            panes: {
+              filters: { visible: true },
+              pageNavigation: { visible: true }
+            }
+          }
+        };
+
+        powerbi.embed(container, config);
+        updateStatus(`✅ Dashboard ready for ${currentUser.name}!`, 'success');
+      } catch (error) {
+        updateStatus(`❌ Error: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    function logout() {
+      // Clear sessionStorage
+      sessionStorage.removeItem('userName');
+      sessionStorage.removeItem('userCountry');
+      
+      // Reload page to show login modal
+      window.location.reload();
+    }
+
+    // On page load, check if user exists
+    window.addEventListener('load', function() {
+      if (!checkExistingSession()) {
+        // No existing session, focus on name input
+        setTimeout(() => {
+          document.getElementById('nameInput').focus();
+        }, 100);
+      }
+    });
+  </script>
+</body>
+</html>
