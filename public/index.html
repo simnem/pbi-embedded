@@ -345,11 +345,11 @@
         // Wait a bit before fetching token
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        const response = await fetch('https://pbi-embedded-app-dyexf5hwhfe4b4ec.westeurope-01.azurewebsites.net/generateToken', { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ country: currentUser.country })
-        });
+       const response = await fetch('https://pbi-embedded-app-dyexf5hwhfe4b4ec.westeurope-01.azurewebsites.net/generateToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, country })
+      });
 
         if (!response.ok) {
           throw new Error(`Server error: ${response.status}`);
@@ -412,6 +412,7 @@
 </body>
 
 </html>
+
 
 
 
