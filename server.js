@@ -9,9 +9,18 @@ const PORT = process.env.PORT || 8080;
 app.use(express.json());
 app.use(express.static('public'));
 
-// CORS
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const allowedOrigins = [
+    'https://victorious-bay-0171f2b10.2.azurestaticapps.net',
+    'http://localhost:3000',
+    'http://localhost:8080'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   
@@ -20,6 +29,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+
 
 // Token generation endpoint
 app.post('/generateToken', async (req, res) => {
@@ -43,3 +53,4 @@ app.post('/generateToken', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
