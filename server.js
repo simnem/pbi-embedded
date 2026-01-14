@@ -68,8 +68,8 @@ app.post('/generateToken', async (req, res) => {
         accessLevel: 'View',
         identities: [
           {
-            username: name,
-            roles: ['Viewer'],
+            username: country,     // ← Sends "US", "FR", etc. to USERNAME()
+            roles: ['CountryCode'] // ← Activates your RLS role,
             datasets: [process.env.DATASET_ID]
           }
         ]
@@ -105,6 +105,7 @@ app.post('/generateToken', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
 
 
 
