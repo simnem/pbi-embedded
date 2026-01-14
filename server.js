@@ -68,7 +68,7 @@ const embedResponse = await axios.post(
 accessLevel: 'View',
 identities: [
 {
-username: name,
+username: country,
 roles: ['CountryCode'],
 datasets: [process.env.DATASET_ID]
 }
@@ -105,4 +105,5 @@ res.status(500).json({ error: error.message });
 app.listen(PORT, () => {
 console.log(`Server running on http://localhost:${PORT}`);
 });
+
 
