@@ -62,4 +62,5 @@ jobs:
           app-name: 'pbi-embedded-app'
           slot-name: 'Production'
           package: .
+
           
